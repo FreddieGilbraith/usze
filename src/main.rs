@@ -17,6 +17,8 @@ enum Op {
     Swp,
     Dup,
     Drp,
+    Log,
+    Exe,
 }
 
 impl<'a> TryFrom<&'a str> for Op {
@@ -34,6 +36,8 @@ impl<'a> TryFrom<&'a str> for Op {
             "%" => Ok(Self::Swp),
             "#" => Ok(Self::Dup),
             "_" => Ok(Self::Drp),
+            "@" => Ok(Self::Exe),
+            "log" => Ok(Self::Log),
             x => match x.parse::<f64>() {
                 Ok(n) => Ok(Self::Num(n)),
                 Err(_) => Err(value),
@@ -54,6 +58,8 @@ impl Display for Op {
             Op::Swp => write!(f, "%"),
             Op::Dup => write!(f, "#"),
             Op::Drp => write!(f, "_"),
+            Op::Exe => write!(f, "@"),
+            Op::Log => write!(f, "log"),
         }
     }
 }
@@ -118,6 +124,14 @@ impl Op {
                 _ => None,
             },
 
+            Op::Log => match (stack.pop()?, stack.pop()?) {
+                (Op::Num(a), Op::Num(b)) => {
+                    stack.push(Op::Num(a.log(b)));
+                    Some(op)
+                }
+                _ => None,
+            },
+
             Op::Swp => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(a));
@@ -135,6 +149,8 @@ impl Op {
                 }
                 _ => None,
             },
+
+            Op::Exe => None,
         }
     }
 }
@@ -182,6 +198,27 @@ fn eval_stdin(stack: &mut Vec<Op>, verbose: bool) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+// fn main() {
+//     // Create an atomic flag to detect the Ctrl+C signal
+//     let running = Arc::new(AtomicBool::new(true));
+//     let r = running.clone();
+
+//     // Set up the Ctrl+C handler
+//     ctrlc::set_handler(move || {
+//         r.store(false, Ordering::SeqCst);
+//         println!("Ctrl+C detected!");
+//     }).expect("Error setting Ctrl-C handler");
+
+//     // Main loop
+//     while running.load(Ordering::SeqCst) {
+//         // Simulate work
+//         std::thread::sleep(std::time::Duration::from_secs(1));
+//         println!("Running...");
+//     }
+
+//     println!("Exiting gracefully.");
+// }
+
 fn main() -> Result<(), Box<dyn Error>> {
     let interactive = atty::is(Stream::Stdin);
     let verbose = interactive || atty::is(atty::Stream::Stdout);
@@ -190,7 +227,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if interactive {
         eval_args(&mut stack, verbose)?;
-        if stack.len() != 1 {
+        loop {
             eval_stdin(&mut stack, verbose)?;
         }
     } else {
