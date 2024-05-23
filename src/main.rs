@@ -18,7 +18,6 @@ enum Op {
     Dup,
     Drp,
     Log,
-    Exe,
 }
 
 impl<'a> TryFrom<&'a str> for Op {
@@ -36,7 +35,6 @@ impl<'a> TryFrom<&'a str> for Op {
             "%" => Ok(Self::Swp),
             "#" => Ok(Self::Dup),
             "_" => Ok(Self::Drp),
-            "@" => Ok(Self::Exe),
             "log" => Ok(Self::Log),
             x => match x.parse::<f64>() {
                 Ok(n) => Ok(Self::Num(n)),
@@ -58,7 +56,6 @@ impl Display for Op {
             Op::Swp => write!(f, "%"),
             Op::Dup => write!(f, "#"),
             Op::Drp => write!(f, "_"),
-            Op::Exe => write!(f, "@"),
             Op::Log => write!(f, "log"),
         }
     }
@@ -149,8 +146,6 @@ impl Op {
                 }
                 _ => None,
             },
-
-            Op::Exe => None,
         }
     }
 }
