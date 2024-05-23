@@ -5,7 +5,7 @@ use std::{
     io::{self, BufRead, Write},
 };
 
-use calc::*;
+use usze::*;
 
 fn eval_and_print_till_terminal(env: &mut Env) -> Result<(), Box<dyn Error>> {
     print!("{} ", env);
@@ -51,6 +51,21 @@ fn push_from_args(env: &mut Env) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn push_from_stdin(env: &mut Env) -> Result<(), Box<dyn Error>> {
+    let stdin = io::stdin().lock();
+
+    for line in stdin.lines() {
+        if let Ok(line) = line {
+            for word in line.split_whitespace() {
+                let op = Op::try_from(word)?;
+                env.push(op)
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let interactive = atty::is(Stream::Stdin);
     let verbose = interactive || atty::is(atty::Stream::Stdout);
@@ -64,11 +79,20 @@ fn main() -> Result<(), Box<dyn Error>> {
             eval_stdin(&mut env, verbose)?;
         }
     } else {
-        // eval_stdin(&mut env, verbose)?;
+        /*
+        could possibly achieve the desired effect by seeking back through the stack
+        and evaluating the first command we come to?
+
+        that would mean we could have
+
+        rpn "3 +" << 4
+        which would then rearnage to "3 4 +"
+
+        */
         push_from_args(&mut env)?;
-        while !env.is_empty() {
-            env.eval();
-        }
+        push_from_stdin(&mut env)?;
+        eval_and_print_till_terminal(&mut env)?;
+        println!("");
     }
 
     Ok(())

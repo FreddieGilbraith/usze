@@ -1,7 +1,10 @@
 [package]
-name = "calc"
+name = "usze"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/FreddieGilbraith/usze"
+description = "Sometimes you just need a calculator"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,3 +17,7 @@ insta = "1.39.0"
 [profile.dev.package]
 insta.opt-level = 3
 similar.opt-level = 3
+
+[[bin]]
+name = "calc"
+path = "./src/main.rs"

@@ -14,14 +14,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "calc"
-version = "0.1.0"
-dependencies = [
- "atty",
- "insta",
-]
-
-[[package]]
 name = "console"
 version = "0.15.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -83,6 +75,14 @@ name = "similar"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa42c91313f1d05da9b26f267f931cf178d4aba455b4c4622dd7355eb80c6640"
+
+[[package]]
+name = "usze"
+version = "0.1.0"
+dependencies = [
+ "atty",
+ "insta",
+]
 
 [[package]]
 name = "winapi"

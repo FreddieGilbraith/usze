@@ -3,7 +3,7 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Op {
     Num(f64),
     Add,
