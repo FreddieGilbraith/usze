@@ -126,7 +126,7 @@ impl Display for Env {
 }
 
 impl Env {
-    pub fn eval(&mut self, op: Op) -> Option<()> {
+    pub fn eval(&mut self, op: &Op) -> Option<()> {
         let stack = &mut self.stack;
         match op {
             Op::Drp => {
@@ -134,7 +134,7 @@ impl Env {
             }
 
             Op::Num(n) => {
-                stack.push(Op::Num(n));
+                stack.push(Op::Num(*n));
             }
 
             Op::Add => match (stack.pop()?, stack.pop()?) {
@@ -174,7 +174,7 @@ impl Env {
 
             Op::Log => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
-                    stack.push(Op::Num(a.log(b)));
+                    stack.push(Op::Num(b.log(a)));
                 }
                 _ => (),
             },

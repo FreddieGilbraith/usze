@@ -12,10 +12,15 @@ fn eval_args(stack: &mut Env, verbose: bool) -> Result<(), Box<dyn Error>> {
         for word in arg.split_whitespace() {
             let op = Op::try_from(word)?;
 
-            let _ = stack.eval(op);
+            if verbose {
+                println!("{}", &op);
+                io::stdout().flush()?;
+            }
+
+            let _ = stack.eval(&op);
 
             if verbose {
-                print!("{} ", stack);
+                print!("{} ", &stack,);
                 io::stdout().flush()?;
             }
         }
@@ -28,13 +33,30 @@ fn eval_stdin(stack: &mut Env, verbose: bool) -> Result<(), Box<dyn Error>> {
     let stdin = io::stdin().lock();
     'outer: for line in stdin.lines() {
         if let Ok(line) = line {
-            for word in line.split_whitespace() {
-                let op = Op::try_from(word)?;
+            let words: Vec<_> = line.split_whitespace().collect();
 
-                let _ = stack.eval(op);
+            if words.len() > 1 {
+                println!("");
+            }
+
+            // dbg!(&words);
+
+            for (i, word) in words.iter().enumerate() {
+                let op = Op::try_from(*word)?;
 
                 if verbose {
-                    print!("{} ", stack);
+                    if words.len() != 1 {
+                        println!("{} {} ", stack, op);
+                    }
+                    io::stdout().flush()?;
+                }
+
+                let _ = stack.eval(&op);
+
+                if verbose {
+                    if words.len() == 1 || i == words.len() - 1 {
+                        print!("{} ", stack);
+                    }
                     io::stdout().flush()?;
                 }
 
