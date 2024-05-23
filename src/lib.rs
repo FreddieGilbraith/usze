@@ -126,81 +126,98 @@ impl Display for Env {
 }
 
 impl Env {
-    pub fn eval(&mut self, op: &Op) -> Option<()> {
+    pub fn push(&mut self, op: Op) {
+        self.stack.push(op);
+    }
+
+    pub fn eval(&mut self) -> Option<bool> {
         let stack = &mut self.stack;
+        let op = stack.pop()?;
+
         match op {
             Op::Drp => {
                 let _ = stack.pop();
+                Some(true)
             }
 
             Op::Num(n) => {
-                stack.push(Op::Num(*n));
+                stack.push(Op::Num(n));
+                Some(false)
             }
 
             Op::Add => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(a + b));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Sub => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(b - a));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Div => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(b / a));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Mul => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(a * b));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Pow => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(a.powf(b)));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Log => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(b.log(a)));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Swp => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(a), Op::Num(b)) => {
                     stack.push(Op::Num(a));
                     stack.push(Op::Num(b));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Dup => match stack.pop()? {
                 Op::Num(a) => {
                     stack.push(Op::Num(a));
                     stack.push(Op::Num(a));
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Set => match (stack.pop()?, stack.pop()?) {
                 (Op::Num(key), val) => {
                     let key = key as u8;
                     let _ = self.regs.insert(key, val);
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
 
             Op::Get => match stack.pop()? {
@@ -208,11 +225,30 @@ impl Env {
                     let key = key as u8;
                     let val = self.regs.remove(&key)?;
                     stack.push(val);
+                    Some(true)
                 }
-                _ => (),
+                _ => None,
             },
         }
+    }
 
-        None
+    pub fn is_empty(&self) -> bool {
+        self.regs.len() + self.stack.len() == 0
+    }
+
+    pub fn fill_from<Iter: IntoIterator<Item = Op>>(&mut self, iter: Iter) {
+        for op in iter.into_iter() {
+            self.stack.push(op)
+        }
+    }
+}
+
+impl FromIterator<Op> for Env {
+    fn from_iter<T: IntoIterator<Item = Op>>(iter: T) -> Self {
+        let stack = iter.into_iter().collect();
+        Self {
+            regs: HashMap::new(),
+            stack,
+        }
     }
 }

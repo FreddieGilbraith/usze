@@ -7,63 +7,44 @@ use std::{
 
 use calc::*;
 
-fn eval_args(stack: &mut Env, verbose: bool) -> Result<(), Box<dyn Error>> {
-    for arg in env::args().skip(1) {
-        for word in arg.split_whitespace() {
-            let op = Op::try_from(word)?;
+fn eval_and_print_till_terminal(env: &mut Env) -> Result<(), Box<dyn Error>> {
+    print!("{} ", env);
+    io::stdout().flush()?;
+    while let Some(true) = env.eval() {
+        print!("\n{} ", env);
+        io::stdout().flush()?;
+    }
+    Ok(())
+}
 
-            if verbose {
-                println!("{}", &op);
-                io::stdout().flush()?;
+fn eval_stdin(env: &mut Env, verbose: bool) -> Result<(), Box<dyn Error>> {
+    let stdin = io::stdin().lock();
+
+    for line in stdin.lines() {
+        if let Ok(line) = line {
+            for (i, word) in line.split_whitespace().enumerate() {
+                let op = Op::try_from(word)?;
+                if verbose && i != 0 {
+                    if i == 1 {
+                        println!("");
+                    }
+                    println!("{}", env);
+                }
+                env.push(op);
             }
 
-            let _ = stack.eval(&op);
-
-            if verbose {
-                print!("{} ", &stack,);
-                io::stdout().flush()?;
-            }
+            eval_and_print_till_terminal(env)?;
         }
     }
 
     Ok(())
 }
 
-fn eval_stdin(stack: &mut Env, verbose: bool) -> Result<(), Box<dyn Error>> {
-    let stdin = io::stdin().lock();
-    'outer: for line in stdin.lines() {
-        if let Ok(line) = line {
-            let words: Vec<_> = line.split_whitespace().collect();
-
-            if words.len() > 1 {
-                println!("");
-            }
-
-            // dbg!(&words);
-
-            for (i, word) in words.iter().enumerate() {
-                let op = Op::try_from(*word)?;
-
-                if verbose {
-                    if words.len() != 1 {
-                        println!("{} {} ", stack, op);
-                    }
-                    io::stdout().flush()?;
-                }
-
-                let _ = stack.eval(&op);
-
-                if verbose {
-                    if words.len() == 1 || i == words.len() - 1 {
-                        print!("{} ", stack);
-                    }
-                    io::stdout().flush()?;
-                }
-
-                if stack.stack.len() == 1 {
-                    break 'outer;
-                }
-            }
+fn push_from_args(env: &mut Env) -> Result<(), Box<dyn Error>> {
+    for arg in env::args().skip(1) {
+        for word in arg.split_whitespace() {
+            let op = Op::try_from(word)?;
+            env.push(op)
         }
     }
 
@@ -74,20 +55,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     let interactive = atty::is(Stream::Stdin);
     let verbose = interactive || atty::is(atty::Stream::Stdout);
 
-    let mut stack = Env::new();
+    let mut env = Env::new();
 
     if interactive {
-        eval_args(&mut stack, verbose)?;
+        push_from_args(&mut env)?;
+        eval_and_print_till_terminal(&mut env)?;
         loop {
-            eval_stdin(&mut stack, verbose)?;
+            eval_stdin(&mut env, verbose)?;
         }
     } else {
-        eval_stdin(&mut stack, verbose)?;
-        eval_args(&mut stack, verbose)?;
-    }
-
-    if stack.stack.len() == 1 {
-        println!("{}", stack.stack[0]);
+        // eval_stdin(&mut env, verbose)?;
+        push_from_args(&mut env)?;
+        while !env.is_empty() {
+            env.eval();
+        }
     }
 
     Ok(())
